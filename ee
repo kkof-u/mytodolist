@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>To-Do List with Reminders</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #e8f0fe;
+      padding: 40px 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    #taskForm {
+      background-color: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 500px;
+      margin: 0 auto;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    input, select, button {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    button {
+      background-color: #4285f4;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #3367d6;
+    }
+    #taskList {
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 0;
+      list-style-type: none;
+    }
+    .task {
+      background: #fff;
+      margin-bottom: 15px;
+      padding: 15px;
+      border-left: 6px solid #4285f4;
+      border-radius: 10px;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+    .completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    .fade-out {
+      animation: fadeOut 0.5s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(10px); }
+    }
+    .task button {
+      margin-top: 10px;
+      padding: 5px 10px;
+      background-color: #d93025;
+      border: none;
+      color: #fff;
+      border-radius: 5px;
+    }
+    .task button:hover {
+      background-color: #b1271b;
+    }
+  </style>
+</head>
+<body>
+  <h1>To-Do List with Reminders</h1>
+  <form id="taskForm">
+    <input type="text" id="taskInput" placeholder="Task description" required />
+    <input type="datetime-local" id="deadlineInput" required />
+    <select id="priorityInput">
+      <option value="1">High</option>
+      <option value="2">Medium</option>
+      <option value="3">Low</option>
+    </select>
+    <div>
+      Sort by:
+      <select id="sortSelect">
+        <option value="deadline">Deadline</option>
+        <option value="priority">Priority</option>
+      </select>
+    </div>
+    <button type="submit" id="addTaskButton">Add Task</button>
+  </form>
+
+  <ul id="taskList"></ul>
+
+  <script>
+    const taskForm = document.getElementById("taskForm");
+    const taskList = document.getElementById("taskList");
+    const sortSelect = document.getElementById("sortSelect");
+
+    let tasks = [];
+
+    taskForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const taskText = document.getElementById("taskInput").value;
+      const deadline = document.getElementById("deadlineInput").value;
+      const priority = document.getElementById("priorityInput").value;
+
+      if (!taskText || !deadline || !priority) return;
+
+      const newTask = {
+        id: Date.now(),
+        text: taskText,
+        deadline: new Date(deadline),
+        priority: parseInt(priority),
+        completed: false
+      };
+
+      tasks.push(newTask);
+      sortAndRenderTasks();
+      taskForm.reset();
+      setReminder(newTask);
+    });
+
+    sortSelect.addEventListener("change", () => {
+      sortAndRenderTasks();
+    });
+
+    function sortAndRenderTasks() {
+      const sortBy = sortSelect.value;
+      if (sortBy === "deadline") {
+        tasks.sort((a, b) => a.deadline - b.deadline);
+      } else {
+        tasks.sort((a, b) => a.priority - b.priority);
+      }
+      renderTasks();
+    }
+
+    function renderTasks() {
+      taskList.innerHTML = "";
+      tasks.forEach((task, index) => {
+        const li = document.createElement("li");
+        li.className = `task fade-in ${task.completed ? 'completed' : ''}`;
+        li.innerHTML = `
+          <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleCompleted(${task.id})" />
+          <strong>${task.text}</strong><br>
+          Deadline: ${task.deadline.toLocaleString()}<br>
+          Priority: ${["High", "Medium", "Low"][task.priority - 1]}<br>
+          <button onclick="removeTask(${task.id})">Remove</button>
+        `;
+        taskList.appendChild(li);
+      });
+    }
+
+    function toggleCompleted(id) {
+      const task = tasks.find(t => t.id === id);
+      if (task) {
+        task.completed = !task.completed;
+        renderTasks();
+      }
+    }
+
+    function removeTask(id) {
+      const index = tasks.findIndex(t => t.id === id);
+      if (index > -1) {
+        const taskItems = document.querySelectorAll(".task");
+        const element = taskItems[index];
+        element.classList.remove("fade-in");
+        element.classList.add("fade-out");
+        setTimeout(() => {
+          tasks.splice(index, 1);
+          sortAndRenderTasks();
+        }, 500);
+      }
+    }
+
+    function setReminder(task) {
+      const now = new Date();
+      const timeUntilDeadline = task.deadline - now;
+      if (timeUntilDeadline > 0) {
+        setTimeout(() => {
+          alert(`Reminder: Task "${task.text}" is due soon!`);
+        }, timeUntilDeadline);
+      }
+    }
+  </script>
+</body>
+</html>
